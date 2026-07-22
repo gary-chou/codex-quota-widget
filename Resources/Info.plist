@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>CodexQuotaWidget</string>
+	<key>CFBundleDisplayName</key>
+	<string>Codex 额度</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.codexquotawidget.app</string>
+	<key>CFBundleVersion</key>
+	<string>1.0.0</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.0</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleExecutable</key>
+	<string>CodexQuotaWidget</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>13.0</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.utilities</string>
+	<!-- 常驻菜单栏、不显示 Dock 图标（结构化需求 §3.1）。 -->
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSHumanReadableCopyright</key>
+	<string>本地工具，仅供个人使用。</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<!-- 应用只读取 Codex 现有用量接口，需要出站网络访问权限。 -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+	</dict>
+</dict>
+</plist>
