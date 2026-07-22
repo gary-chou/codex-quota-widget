@@ -12,7 +12,7 @@ public final class StatusItemController: NSObject {
     private let popover: NSPopover
 
     public init(viewModel: AppViewModel) {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         popover = NSPopover()
         popover.behavior = .transient
         popover.contentViewController = NSHostingController(rootView: PopoverView(viewModel: viewModel))
@@ -46,20 +46,21 @@ public final class StatusItemController: NSObject {
     }
 
     /// StatusItemController.title 依据界面状态计算菜单栏文案：
-    /// 有快照时显示“Codex NN%”（取剩余比例最低的窗口）；
-    /// 无快照时，loading 显示“Codex --”，failed 显示“Codex !”。
+    /// 有快照时显示“NN%”（取剩余比例最低的窗口）；
+    /// 无快照时，loading 显示“--”，failed 显示“!”。
+    /// 菜单栏保持最紧凑形态，应用归属通过 accessibility label 与详情面板表达。
     public static func title(for state: ViewState) -> String {
         if let snapshot = state.snapshot, let tightest = snapshot.tightestWindow {
             let rounded = Int(tightest.remainingPercent.rounded())
-            return "Codex \(rounded)%"
+            return "\(rounded)%"
         }
         switch state {
         case .loading:
-            return "Codex --"
+            return "--"
         case .idle:
-            return "Codex --"
+            return "--"
         case .failed:
-            return "Codex !"
+            return "!"
         }
     }
 }

@@ -95,19 +95,19 @@ struct ViewModelTests {
 
         let title = StatusItemController.title(for: .idle(snapshot))
 
-        #expect(title == "Codex 25%")
+        #expect(title == "25%")
     }
 
-    @Test("TC-04-02 首加载/异常：无快照时 loading 显示 Codex --")
+    @Test("TC-04-02 首加载/异常：无快照时 loading 显示 --")
     func loadingWithoutSnapshotShowsPlaceholder() {
         let title = StatusItemController.title(for: .loading(nil))
-        #expect(title == "Codex --")
+        #expect(title == "--")
     }
 
-    @Test("TC-04-02 无数据错误/异常：无快照时 failed 显示 Codex !")
+    @Test("TC-04-02 无数据错误/异常：无快照时 failed 显示 !")
     func failedWithoutSnapshotShowsErrorMarker() {
         let title = StatusItemController.title(for: .failed(nil, .networkUnavailable))
-        #expect(title == "Codex !")
+        #expect(title == "!")
     }
 
     @Test("TC-04-02 边界：failed 但携带旧快照时仍显示该快照的百分比，而非错误标记")
@@ -117,7 +117,7 @@ struct ViewModelTests {
 
         let title = StatusItemController.title(for: .failed(snapshot, .networkUnavailable))
 
-        #expect(title == "Codex 60%")
+        #expect(title == "60%")
     }
 
     @Test("TC-04-04 开机启动成功/边界：开关变更后与系统状态一致")
