@@ -120,3 +120,7 @@ scripts/scan_secrets.sh /tmp/codex-quota-widget-test-output.log
 - `account/rateLimits/read` 与回退使用的 `wham/usage` 都属于 Codex 内部能力，协议可能演进；
   已通过双链路回退、camelCase/snake_case 容错解析和明确错误分类降低该风险。
 - 首版不支持多账号切换、Intel Mac 与 Mac App Store 分发。
+
+## 许可证
+
+本项目采用 [MIT License](LICENSE) 开源。
