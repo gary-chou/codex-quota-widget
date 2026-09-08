@@ -11,7 +11,7 @@
 
 ### 详情面板
 
-<img src="docs/images/quota-panel.png" alt="CodexQuotaWidget 详情面板" width="294">
+![CodexQuotaWidget 详情面板](docs/images/quota-panel.png)
 
 ## 功能
 
