@@ -3,6 +3,16 @@
 一个纯本地的 macOS 菜单栏应用：复用本机 Codex 登录状态与用量能力，展示额度窗口的剩余百分比、
 重置时间与最近任务的 Token 计数。应用不上传任何本地数据，只读调用 Codex 现有用量接口。
 
+## 截图
+
+### 菜单栏状态
+
+![CodexQuotaWidget 菜单栏状态](docs/images/menu-bar.png)
+
+### 详情面板
+
+<img src="docs/images/quota-panel.png" alt="CodexQuotaWidget 详情面板" width="294">
+
 ## 功能
 
 - 菜单栏常驻，不显示 Dock 图标；文字直接显示当前最紧张（剩余比例最低）的额度窗口。
