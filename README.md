@@ -1,6 +1,6 @@
 # Codex 余量小组件（CodexQuotaWidget）
 
-一个纯本地的 macOS 菜单栏应用：读取本机 Codex 登录状态与用量接口，展示额度窗口的剩余百分比、
+一个纯本地的 macOS 菜单栏应用：复用本机 Codex 登录状态与用量能力，展示额度窗口的剩余百分比、
 重置时间与最近任务的 Token 计数。应用不上传任何本地数据，只读调用 Codex 现有用量接口。
 
 ## 功能
@@ -11,11 +11,14 @@
 - 可选悬浮窗：默认关闭，开启后显示无焦点深色圆角卡片，位置在重启后保留。
 - 开机启动：默认关闭，基于 `SMAppService.mainApp` 的真实系统状态，不用本地偏好冒充。
 - 容错解析：任一额度窗口缺失、为 `null`、字段非法或出现未知窗口时长都不会导致崩溃。
+- 认证兼容：优先通过 Codex 自带 `app-server` 读取额度，支持文件、macOS 钥匙串和桌面应用登录态；
+  旧版 Codex 不支持该能力时自动回退到 `~/.codex/auth.json`。
 
 ## 隐私
 
 - 不读取、不展示对话标题、正文或用户输入；本地 Token 统计只解析结构化的 Token 事件。
-- 认证凭据只在内存中短暂使用，不写日志、不持久化；网络请求只设置 `Authorization`、
+- 小组件不直接读取 macOS 钥匙串；优先由 Codex 自身认证层完成额度读取。回退链路中的认证凭据
+  只在内存中短暂使用，不写日志、不持久化；网络请求只设置 `Authorization`、
   可选的账号标识与标准 `Accept` 头。
 - 网络传输使用 `URLSession(configuration: .ephemeral)`，不写磁盘缓存、不持久化 Cookie。
 - 本地持久化的用户偏好仅包含：悬浮窗开关、悬浮窗位置、开机启动状态；不包含任何凭据。
@@ -25,6 +28,7 @@
 ```
 Package.swift
 Sources/CodexQuotaCore/      # 不依赖 UI 的领域逻辑（解析、认证、网络、Token 统计、刷新状态机）
+  CodexAppServerClient.swift # Codex CLI 定位、app-server JSONL RPC 与超时清理
 Sources/CodexQuotaWidget/    # AppKit + SwiftUI 菜单栏应用
 Tests/CodexQuotaCoreTests/   # Core 单元测试
 Tests/CodexQuotaWidgetTests/ # ViewModel / 菜单栏文案单元测试
@@ -42,6 +46,7 @@ Core 层的文件、网络、时钟、开机启动能力全部通过协议注入
 
 - Apple Silicon Mac，macOS 13 及以上。
 - 只需要 Swift 命令行工具（Command Line Tools），不需要完整 Xcode。
+- 目标机器需安装 Codex CLI 或 Codex 桌面应用；可用 `CODEX_BINARY=/绝对路径/codex` 覆盖自动查找结果。
 
 ### 已知环境差异：`swift test` 需要额外的 C++ 头文件路径
 
@@ -112,6 +117,6 @@ scripts/scan_secrets.sh /tmp/codex-quota-widget-test-output.log
 
 ## 已知限制
 
-- `wham/usage` 是 Codex 客户端当前使用的内部端点，不是稳定公开 API，响应结构可能演进；
-  已通过容错解析、明确错误分类与可替换的传输层降低该风险。
+- `account/rateLimits/read` 与回退使用的 `wham/usage` 都属于 Codex 内部能力，协议可能演进；
+  已通过双链路回退、camelCase/snake_case 容错解析和明确错误分类降低该风险。
 - 首版不支持多账号切换、Intel Mac 与 Mac App Store 分发。

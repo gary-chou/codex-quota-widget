@@ -22,17 +22,20 @@ public enum RefreshOutcome: Equatable {
 /// 并发策略（技术方案 §3.5、§3.7）：额度请求与 Token 读取并发执行；额度请求成功即产生快照
 /// （快照提交边界），Token 读取失败只让该字段标记为不可用，属于部分成功，不影响额度展示。
 public struct QuotaRefreshCoordinator {
+    private let appServerClient: AppServerUsageFetching?
     private let authStore: AuthProviding
     private let usageClient: UsageFetching
     private let tokenReader: RecentTokenReading
     private let clock: ClockProviding
 
     public init(
+        appServerClient: AppServerUsageFetching? = nil,
         authStore: AuthProviding,
         usageClient: UsageFetching,
         tokenReader: RecentTokenReading,
         clock: ClockProviding = SystemClock()
     ) {
+        self.appServerClient = appServerClient
         self.authStore = authStore
         self.usageClient = usageClient
         self.tokenReader = tokenReader
@@ -41,21 +44,12 @@ public struct QuotaRefreshCoordinator {
 
     /// QuotaRefreshCoordinator.refresh 执行一次完整刷新，返回成功快照或面向用户的错误。
     public func refresh() async -> RefreshOutcome {
-        let auth: CodexAuth
-        do {
-            auth = try authStore.load()
-        } catch {
-            // 未登录是最常见也最需要明确引导的场景，单独判断以便提前返回，不发起无意义的网络请求。
-            return .failure(.notSignedIn)
-        }
-
         // Token 读取与额度请求并发执行，二者互不阻塞；Token 结果无论成功与否都必须被消费，
         // 避免遗留未等待的子任务。
         async let tokenResultTask = tokenReader.readLatest()
 
         do {
-            let data = try await usageClient.fetch(auth: auth)
-            let windows = try UsageParser.parse(data)
+            let windows = try await fetchWindowsWithFallback()
             let tokens = await tokenResultTask
             let snapshot = QuotaSnapshot(windows: windows, recentTokens: tokens, refreshedAt: clock.now())
             return .success(snapshot)
@@ -65,6 +59,40 @@ public struct QuotaRefreshCoordinator {
         } catch {
             _ = await tokenResultTask
             return .failure(.networkUnavailable)
+        }
+    }
+
+    private func fetchWindowsWithFallback() async throws -> [QuotaWindow] {
+        var appServerError: Error?
+        if let appServerClient {
+            do {
+                let data = try await appServerClient.fetch()
+                do {
+                    return try UsageParser.parse(data)
+                } catch {
+                    // 可序列化并不等于协议兼容；无有效窗口时仍应尝试旧链路。
+                    throw CodexAppServerError.incompatible
+                }
+            } catch {
+                // app-server 是首选但不是单点依赖；旧版 CLI 或进程不可用时仍允许文件认证继续工作。
+                appServerError = error
+            }
+        }
+
+        do {
+            let auth = try authStore.load()
+            let data = try await usageClient.fetch(auth: auth)
+            return try UsageParser.parse(data)
+        } catch AuthError.notSignedIn {
+            guard let appServerError else { throw UserFacingError.notSignedIn }
+            switch appServerError {
+            case CodexAppServerError.timedOut, CodexAppServerError.unavailable:
+                throw UserFacingError.networkUnavailable
+            case CodexAppServerError.binaryNotFound, CodexAppServerError.incompatible:
+                throw UserFacingError.notSignedIn
+            default:
+                throw UserFacingError.networkUnavailable
+            }
         }
     }
 }

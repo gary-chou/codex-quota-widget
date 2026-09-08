@@ -102,6 +102,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let codexHome = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".codex")
         let coordinator = QuotaRefreshCoordinator(
+            appServerClient: CodexAppServerClient(),
             authStore: FileAuthStore(codexHome: codexHome),
             usageClient: UsageClient(),
             tokenReader: JSONLRecentTokenReader(sessionsRoot: codexHome.appendingPathComponent("sessions"))

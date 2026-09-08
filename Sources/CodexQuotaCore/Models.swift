@@ -19,13 +19,15 @@ public struct RawUsageResponse: Decodable {
     private enum CodingKeys: String, CodingKey {
         case rateLimit = "rate_limit"
         case rateLimitsAlternate = "rate_limits"
+        case rateLimitsAppServer = "rateLimits"
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let primary = try? container.decodeIfPresent(RawRateLimit.self, forKey: .rateLimit)
         let alternate = try? container.decodeIfPresent(RawRateLimit.self, forKey: .rateLimitsAlternate)
-        rateLimit = primary ?? alternate
+        let appServer = try? container.decodeIfPresent(RawRateLimit.self, forKey: .rateLimitsAppServer)
+        rateLimit = primary ?? alternate ?? appServer
     }
 }
 
@@ -71,26 +73,35 @@ public struct RawRateLimitWindow: Decodable {
 
     private enum CodingKeys: String, CodingKey {
         case usedPercent = "used_percent"
+        case usedPercentAppServer = "usedPercent"
         case limitWindowSeconds = "limit_window_seconds"
         case windowMinutes = "window_minutes"
+        case windowDurationMinutesAppServer = "windowDurationMins"
         case resetAt = "reset_at"
         case resetsAtAlternate = "resets_at"
+        case resetsAtAppServer = "resetsAt"
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         usedPercent = container.decodeLenientDouble(forKey: .usedPercent)
+            ?? container.decodeLenientDouble(forKey: .usedPercentAppServer)
 
         if let seconds = container.decodeLenientInt(forKey: .limitWindowSeconds) {
             limitWindowSeconds = seconds
         } else if let minutes = container.decodeLenientInt(forKey: .windowMinutes) {
             // 观测到的实际事件日志以分钟为单位表示窗口时长，统一换算为秒以复用同一套窗口归类逻辑。
             limitWindowSeconds = minutes * 60
+        } else if let minutes = container.decodeLenientInt(forKey: .windowDurationMinutesAppServer) {
+            // app-server 使用 camelCase 的分钟字段，尽早归一化以保持领域模型与 UI 无需感知来源。
+            limitWindowSeconds = minutes * 60
         } else {
             limitWindowSeconds = nil
         }
 
         if let date = container.decodeLenientDate(forKey: .resetAt) {
+            resetAt = date
+        } else if let date = container.decodeLenientDate(forKey: .resetsAtAppServer) {
             resetAt = date
         } else {
             resetAt = container.decodeLenientDate(forKey: .resetsAtAlternate)
